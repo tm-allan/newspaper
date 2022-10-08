@@ -147,6 +147,16 @@ def ensure_paths(date):
         os.makedirs(image_folder)
 
 
+def make_main_page(date):
+    main_page = os.path.join(date, 'main-page.md')
+    with open(main_page, 'w') as handle:
+        handle.write('# The Hindu\n\n')
+        for filename in sorted(glob(f'{date}/*.md')):
+            filename = os.path.basename(filename)
+            heading = os.path.splitext(filename)[0].replace('-', ' ').title()
+            handle.write(f'[{heading}](./{filename})\n\n')
+
+
 def get_mainpage(main_link):
     ''' extract details from the page with today's paper '''
     try:
@@ -164,6 +174,7 @@ def get_mainpage(main_link):
                 continue
             ensure_paths(date)
             get_section(date, heading, link)
+        make_main_page(date)
 
     except Exception as exc:
         print(f'Error1: {str(exc)}')
