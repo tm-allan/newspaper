@@ -157,7 +157,7 @@ def make_main_page(date):
             handle.write(f'[{heading}](./{filename})\n\n')
 
 
-def get_mainpage(main_link):
+def get_mainpage(main_link=main_link):
     ''' extract details from the page with today's paper '''
     try:
         date = datetime.datetime.now().strftime("%y%m%d")
@@ -169,8 +169,6 @@ def get_mainpage(main_link):
         header = {item.getText().strip().lower(): item.get('href') for item in header}
         for heading, link in header.items():
             if heading in not_allowed_sections:
-                continue
-            if heading != 'international':
                 continue
             ensure_paths(date)
             get_section(date, heading, link)
