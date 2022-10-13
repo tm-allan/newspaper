@@ -56,11 +56,17 @@ class Article():
 
 
 class TheHinduArticle():
+    ''' download an article from thehindu '''
     def __init__(self, link):
+        ''' initialize the class variables '''
         self.link = link
-        soup = self.get_page(link)
-        self.content = self.get_content(soup, link)
-        self.image = self.get_image(soup)
+        if link is None or link == '':
+            self.content = None
+            self.image = None
+        else:
+            soup = self.get_page(link)
+            self.content = self.get_content(soup, link)
+            self.image = self.get_image(soup)
 
     def get_page(self, endpoint):
         ''' get a page '''
@@ -113,12 +119,12 @@ class TheHinduArticle():
             body = '\n\n'.join(body)
         except Exception as exc:
             LOGGER.error(str(exc))
-        
+
         return Article(title, oneliner, place, body)
 
 
 if __name__ == '__main__':
-    test_article_link = 'https://www.thehindu.com/todays-paper/imf-cuts-indias-growth-forecast-to-68-this-year/article65998939.ece'
+    test_article_link = 'https://www.thehindu.com/todays-paper/centre-to-grant-oil-psus-rs-22000-crore-to-cover-lpg-losses/article66003291.ece'
     article = TheHinduArticle(test_article_link)
     print(f'title: {article.content.title}')
     print(f'oneliner: {article.content.oneliner}')
