@@ -1,12 +1,18 @@
 ''' extract articles from thehindu page '''
 import os
 import re
+import sys
 import logging
 import datetime
 import requests
-from glob import glob
 from tqdm.auto import tqdm
 from bs4 import BeautifulSoup
+
+sys.path.append('.')
+sys.path.append('app')
+
+import logger
+from classes import *
 
 
 headers = {
@@ -15,31 +21,6 @@ headers = {
 main_link = 'https://www.thehindu.com/todays-paper/'
 
 LOGGER = logging.getLogger('newspaper.thehindu')
-
-
-class Image():
-    ''' a datastructure to store the details of an image '''
-    def __init__(self, filename, alt_text, raw):
-        self.filename = filename
-        self.alt_text = alt_text
-        self.raw = raw
-
-
-class Article():
-    ''' a datastructure to store the details of an article '''
-    def __init__(self, heading, oneliner, place, body):
-        self.heading = heading
-        self.oneliner = oneliner
-        self.place = place
-        self.body = body
-
-
-class Section():
-    ''' a datastructure to store the details of an article '''
-    def __init__(self, name, link, articles):
-        self.name = name
-        self.link = link
-        self.articles = articles
 
 
 class TheHinduArticle():
@@ -112,6 +93,8 @@ class TheHinduArticle():
 class TheHindu():
     ''' class to download the day's paper '''
     def __init__(self, date, link):
+        ''' initialize '''
+        # TODO: add date
         self.date = date
         self.link = link
         self.section = self.get_mainpage(link)
@@ -127,10 +110,14 @@ class TheHindu():
 
     def get_articles_from_section(self, heading, section_link):
         ''' download all articles from this section '''
-        LOGGER.info('.')
         try:
             soup = self.fetch_page(section_link)
-            subsections = soup.select('#section_1')[0].select('.archive-list')
+            subsections = soup.select('#section_1')
+            # handle cases where a subsection has no articles
+            if subsections:
+                subsections = subsections[0].select('.archive-list')
+            else:
+                return []
             urls = []
             for subsection in subsections:
                 # has all the headings and the links
@@ -140,9 +127,9 @@ class TheHindu():
             # return the list of articles
             return [TheHinduArticle(url) for url in tqdm(urls, desc=heading)]
         except Exception as exc:
-            LOGGER.error(exc)
+            LOGGER.exception(exc)
             LOGGER.debug(f'heading: {heading} | section_link: {section_link}')
-            return
+            return []
 
     def get_sections_list(self, link):
         ''' extract details from the page with today's paper '''
@@ -150,8 +137,7 @@ class TheHindu():
             soup = self.fetch_page(link)
 
             header = soup.select('#subnav-tpbar-latest')[0]
-            header = {item.getText().strip().lower(): item.get('href') for item in header}
-            return header
+            return {item.getText().strip().title(): item.get('href') for item in header}
 
         except Exception as exc:
             LOGGER.error(exc)
@@ -164,7 +150,7 @@ class TheHindu():
             sections_link = self.get_sections_list(link)
             # section = []
             # for heading, link in sections_link.items():
-            #     if heading != 'others':
+            #     if heading != 'Others':
             #         continue
             #     section += [Section(heading, link, self.get_articles_from_section(heading, link))]
             #     break

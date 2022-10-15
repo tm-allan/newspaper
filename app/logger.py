@@ -3,15 +3,15 @@ import logging
 from logging.handlers import RotatingFileHandler
 
 
-log_file = 'logs.log'
+LOG_FILE = 'logs.log'
 # if config.DEBUG:
 #     LOG_LEVEL = logging.DEBUG
 # else:
 #     LOG_LEVEL = logging.INFO
-LOG_LEVEL = logging.DEBUG
+LOG_LEVEL = logging.INFO
 ch = logging.StreamHandler(sys.stdout)
 ch.setLevel(LOG_LEVEL)
-fh = RotatingFileHandler(log_file, maxBytes=10000000, backupCount=3)
+fh = RotatingFileHandler(LOG_FILE, maxBytes=10000000, backupCount=3)
 fh.setLevel(LOG_LEVEL)
 # create formatter and add it to the handlers
 formatter = logging.Formatter(fmt='%(levelname).1s %(asctime)s.%(msecs).03d: %(message)s [%(pathname)s:%(lineno)d]', datefmt='%Y-%m-%d %H:%M:%S')
