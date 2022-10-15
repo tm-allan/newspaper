@@ -7,34 +7,12 @@ import requests
 from glob import glob
 from tqdm.auto import tqdm
 from bs4 import BeautifulSoup
-# import logger
 
 
 headers = {
     'User-Agent': 'Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.17 (KHTML, like Gecko) Chrome/24.0.1312.27 Safari/537.17'
 }
 main_link = 'https://www.thehindu.com/todays-paper/'
-article_heading ='## <span style="color:blue"> {} </span>\n\n'
-article_oneliner = '### <div style="text-align: justify"> *{}* </div>\n\n'
-article_body = '<div style="text-align: justify"> \n\n{} </div>\n\n'
-article_image = '![alt text]({} "{}")\n\n'
-not_allowed_sections = [
-    # 'Front Page',
-    # 'national',
-    'tamil nadu',
-    'karnataka',
-    # 'kerala',
-    'andhra pradesh',
-    'telangana',
-    # 'new delhi',
-    # 'international',
-    # 'opinion',
-    # 'business',
-    # 'sport',
-    # 'miscellaneous',
-    # 'education plus',
-    # 'others',
-]
 
 LOGGER = logging.getLogger('newspaper.thehindu')
 
@@ -81,8 +59,7 @@ class TheHinduArticle():
         ''' get a page '''
         try:
             response = requests.get(endpoint, timeout=10)
-            if response.status_code != requests.codes.ok:
-                return None
+            response.raise_for_status()
             soup = BeautifulSoup(response.text, 'html.parser')
         except Exception as exc:
             LOGGER.error(str(exc))
@@ -94,8 +71,7 @@ class TheHinduArticle():
         try:
             image_src = soup.select('picture')[0].find_all('source')[0]['srcset']
             response = requests.get(image_src, timeout=10, headers=headers)
-            if response.status_code != requests.codes.ok:
-                return None
+            response.raise_for_status()
             # convert the filename into admissible characters
             filename = "".join(x for x in os.path.basename(image_src) if (x.isalnum() or x == '.'))
             # move it to {date}/images folder
@@ -161,8 +137,6 @@ class TheHindu():
                 for tags in subsection.find_all('a'):
                     # lists all the <a> tags with the links
                     urls += [tags.get('href')]
-            # return urls
-
             # return the list of articles
             return [TheHinduArticle(url) for url in tqdm(urls, desc=heading)]
         except Exception as exc:
