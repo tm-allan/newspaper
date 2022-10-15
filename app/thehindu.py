@@ -7,6 +7,7 @@ import requests
 from glob import glob
 from tqdm.auto import tqdm
 from bs4 import BeautifulSoup
+# import logger
 
 
 headers = {
@@ -48,11 +49,19 @@ class Image():
 
 class Article():
     ''' a datastructure to store the details of an article '''
-    def __init__(self, title, oneliner, place, body):
-        self.title = title
+    def __init__(self, heading, oneliner, place, body):
+        self.heading = heading
         self.oneliner = oneliner
         self.place = place
         self.body = body
+
+
+class Section():
+    ''' a datastructure to store the details of an article '''
+    def __init__(self, name, link, articles):
+        self.name = name
+        self.link = link
+        self.articles = articles
 
 
 class TheHinduArticle():
@@ -98,8 +107,9 @@ class TheHinduArticle():
 
     def get_content(self, soup, link):
         ''' get one news article '''
+        heading = oneliner = place = body = None
         try:
-            title = soup.select('.title')[0].getText().strip()
+            heading = soup.select('.title')[0].getText().strip()
         except Exception as exc:
             LOGGER.error(str(exc))
 
@@ -120,16 +130,82 @@ class TheHinduArticle():
         except Exception as exc:
             LOGGER.error(str(exc))
 
-        return Article(title, oneliner, place, body)
+        return Article(heading, oneliner, place, body)
+
+
+class TheHindu():
+    ''' class to download the day's paper '''
+    def __init__(self, date, link):
+        self.date = date
+        self.link = link
+        self.section = self.get_mainpage(link)
+
+    def fetch_page(self, link):
+        try:
+            response = requests.get(link, timeout=10, headers=headers)
+            response.raise_for_status()
+            return BeautifulSoup(response.text, 'html.parser')
+        except Exception as exc:
+            LOGGER.error(exc)
+            return None
+
+    def get_articles_from_section(self, heading, section_link):
+        ''' download all articles from this section '''
+        LOGGER.info('.')
+        try:
+            soup = self.fetch_page(section_link)
+            subsections = soup.select('#section_1')[0].select('.archive-list')
+            urls = []
+            for subsection in subsections:
+                # has all the headings and the links
+                for tags in subsection.find_all('a'):
+                    # lists all the <a> tags with the links
+                    urls += [tags.get('href')]
+            # return urls
+
+            # return the list of articles
+            return [TheHinduArticle(url) for url in tqdm(urls, desc=heading)]
+        except Exception as exc:
+            LOGGER.error(exc)
+            LOGGER.debug(f'heading: {heading} | section_link: {section_link}')
+            return
+
+    def get_sections_list(self, link):
+        ''' extract details from the page with today's paper '''
+        try:
+            soup = self.fetch_page(link)
+
+            header = soup.select('#subnav-tpbar-latest')[0]
+            header = {item.getText().strip().lower(): item.get('href') for item in header}
+            return header
+
+        except Exception as exc:
+            LOGGER.error(exc)
+            LOGGER.debug(f'header: {header}')
+            return None
+
+    def get_mainpage(self, link=main_link):
+        ''' extract details from the page with today's paper '''
+        try:
+            sections_link = self.get_sections_list(link)
+            # section = []
+            # for heading, link in sections_link.items():
+            #     if heading != 'others':
+            #         continue
+            #     section += [Section(heading, link, self.get_articles_from_section(heading, link))]
+            #     break
+            # return section
+            return [Section(heading, link, self.get_articles_from_section(heading, link)) for heading, link in sections_link.items()]
+
+        except Exception as exc:
+            LOGGER.error(exc)
+            return
 
 
 if __name__ == '__main__':
-    test_article_link = 'https://www.thehindu.com/todays-paper/centre-to-grant-oil-psus-rs-22000-crore-to-cover-lpg-losses/article66003291.ece'
-    article = TheHinduArticle(test_article_link)
-    print(f'title: {article.content.title}')
-    print(f'oneliner: {article.content.oneliner}')
-    print(f'place: {article.content.place}')
-    print(f'body: {article.content.body}')
-    print(f'filename: {article.image.filename}')
-    print(f'alt_text: {article.image.alt_text}')
-    # print(article.image.raw)
+    date = datetime.datetime.now().strftime("%y%m%d")
+    thehindu = TheHindu(date, main_link)
+    for section in thehindu.section:
+        print(section.name)
+        for article in section.articles:
+            print(f'\t{article.content.heading}')

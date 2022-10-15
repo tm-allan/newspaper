@@ -55,7 +55,7 @@ class Test(unittest.TestCase):
             extracted_article.content = extracted_article.get_content(soup, self.article_link)
             extracted_article.image = extracted_article.get_image(soup)
             saved_article_data, saved_article_image = self.get_saved_article_values()
-            self.assertEqual(saved_article_data.title, extracted_article.content.title)
+            self.assertEqual(saved_article_data.heading, extracted_article.content.heading)
             self.assertEqual(saved_article_data.oneliner, extracted_article.content.oneliner)
             self.assertEqual(saved_article_data.place, extracted_article.content.place)
             self.assertEqual(saved_article_data.body, extracted_article.content.body)
