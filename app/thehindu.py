@@ -141,13 +141,15 @@ class TheHindu():
 
         except Exception as exc:
             LOGGER.error(exc)
-            LOGGER.debug(f'header: {header}')
             return None
 
     def get_mainpage(self, link=main_link):
         ''' extract details from the page with today's paper '''
         try:
             sections_link = self.get_sections_list(link)
+            if sections_link is None:
+                LOGGER.error("Cound not get today's paper")
+                return None
             # section = []
             # for heading, link in sections_link.items():
             #     if heading != 'Others':
@@ -165,6 +167,8 @@ class TheHindu():
 if __name__ == '__main__':
     date = datetime.datetime.now().strftime("%y%m%d")
     thehindu = TheHindu(date, main_link)
+    if thehindu is None:
+        sys.exit(1)
     for section in thehindu.section:
         print(section.name)
         for article in section.articles:
