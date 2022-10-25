@@ -10,7 +10,7 @@ if __name__ == '__main__':
     main_link = 'https://www.thehindu.com/todays-paper/'
     date = datetime.datetime.now().strftime("%y%m%d")
     thehindu = TheHindu(date, main_link)
-    if thehindu is None:
+    if thehindu.section is None:
         sys.exit(1)
     for section in thehindu.section:
         print(section.name)
